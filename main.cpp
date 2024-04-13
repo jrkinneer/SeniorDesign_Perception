@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include "example.h"
 #include "qrCode.h"
-#include <time.h>
+#include <sys/time.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                     These parameters are reconfigurable                                        //
@@ -86,7 +86,8 @@ int main()
 
     while (1)
     {
-        time_t start = time(0);
+        struct timeval stop, start;
+        gettimeofday(&start, NULL);
 
         // This call waits until a new composite_frame is available
         // composite_frame holds a set of frames. It is used to prevent frame drops
@@ -137,7 +138,7 @@ int main()
                     cv::Rect roi(j, i, WINDOW_WIDTH, WINDOW_HEIGHT);
                     // Extract the window
                     window = rgb_image(roi);
-                    
+                    std::cout<<"new window"<<std::endl;
                     if (qrCodeDetect(i, j, window, qrCode_pixel_cords)){ //detect qr code
                         if (errorCheckBoundingBox(qrCode_pixel_cords, j, i, WINDOW_WIDTH, WINDOW_HEIGHT)){ //error check qr detection
                             std::cout<<"found"<<std::endl;
@@ -152,7 +153,6 @@ int main()
                             // cv::waitKey(5000);
                             // cv::destroyAllWindows();
                         }
-                        //std::cout<<"failed error check"<<std::endl;
                     }
 
                     if (break_loop){
@@ -164,9 +164,9 @@ int main()
                 }
             }   
             rs2_release_frame(frame);
-            double seconds_since_start = difftime( time(0), start);
-
-            std::cout<<"time elapsed for frame processing: "<< seconds_since_start<<"\n"<<std::endl;
+            gettimeofday(&stop, NULL);
+            printf("took %lu us for window processing\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
+            bool stop = true;
         }
 
         rs2_release_frame(frames);

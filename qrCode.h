@@ -4,7 +4,7 @@
 #include <opencv2/highgui.hpp>
 #include <vector>
 #include <math.h>
-#include <time.h>
+#include <sys/time.h>
 
 //struct for returning all data about found cube
 struct cubeData{
@@ -43,6 +43,9 @@ bool qrCodeDetect(int height, int width, cv::Mat wind, std::vector<cv::Point> &p
     //cv::Mat wind, window matrix
     //std::vector<cv::Point> &pixels, pixel vector passed by reference that will contain the 4 pixel coordinates of the qr code after successful detection
     
+    struct timeval stop, start;
+    gettimeofday(&start, NULL);
+    
     //qr code detector object
     cv::QRCodeDetector qr = cv::QRCodeDetector();
 
@@ -54,9 +57,13 @@ bool qrCodeDetect(int height, int width, cv::Mat wind, std::vector<cv::Point> &p
             pixels[i].x = pixels[i].x + width;
             pixels[i].y = pixels[i].y + height;
         }
-        
+        //do stuff
+        gettimeofday(&stop, NULL);
+        printf("took %lu us for successful qr code detection\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
         return true;
     }
+    gettimeofday(&stop, NULL);
+    printf("took %lu us for failed qr code detection\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
     return false;
 };
 
@@ -65,6 +72,9 @@ bool qrCodeDetect(int height, int width, cv::Mat wind, std::vector<cv::Point> &p
 //it does decrease runtime by at least 1 second per full image
 bool errorCheckBoundingBox(const std::vector<cv::Point>& pixels, int w, int h, int window_width, int window_height, int buffer_size = 20) {
     
+    struct timeval stop, start;
+    gettimeofday(&start, NULL);
+
     // Assign variables
     int top_left_x = pixels[0].x;
     int top_left_y = pixels[0].y;
@@ -89,11 +99,15 @@ bool errorCheckBoundingBox(const std::vector<cv::Point>& pixels, int w, int h, i
     for (int i = 0; i < 4; i++) {
         // Check pixel x dimension
         if (pixels[i].x < w_buffer || pixels[i].x > w_width_buffer) {
+            gettimeofday(&stop, NULL);
+            printf("took %lu us for failed x test\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
             return false;
         }
 
         // Check pixel y dimension
         if (pixels[i].y < h_buffer || pixels[i].y > h_height_buffer) {
+            gettimeofday(&stop, NULL);
+            printf("took %lu us for failed y test\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
             return false;
         }
     }
@@ -109,6 +123,8 @@ bool errorCheckBoundingBox(const std::vector<cv::Point>& pixels, int w, int h, i
     double right_dist_squared = (bottom_right_x - top_right_x) * (bottom_right_x - top_right_x) + (bottom_right_y - top_right_y) * (bottom_right_y - top_right_y);
 
     if (top_dist_squared < 0.75 * right_dist_squared || top_dist_squared > 1.3 * right_dist_squared) {
+        gettimeofday(&stop, NULL);
+        printf("took %lu us for failed distance test\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
         return false; // Top dist is less than 90% or greater than 110% of right distance
     }
     //**************************************************************************************************************************************
@@ -149,11 +165,15 @@ bool errorCheckBoundingBox(const std::vector<cv::Point>& pixels, int w, int h, i
 
     // Check tolerance
     if (angle_left_right_pair > 10 || angle_top_bottom_pair > 10) {
+        gettimeofday(&stop, NULL);
+        printf("took %lu us for failed angle test\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
         return false;
     }
     //**************************************************************************************************************************************
 
     // Return true if passes all checks
+    gettimeofday(&stop, NULL);
+    printf("took %lu us for successful error check \n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
     return true;
 
     //feel free to alter the order of these error checks there might be some performance gain in eithe rruntime or accuracy by fine tuning the parameteres
@@ -192,6 +212,9 @@ cubeData getBoundingCube(cv::Mat &img, std::vector<cv::Point> qr_pixels){
     //2) find pixel coordinates of 8 cube corners
     //3) use pixel coordinates of 4 cube corners on the front face to solve for cube rotation and translation
     //4) use the cube rotation and translation in combination with cube world coordinates to solve for mm displacement
+
+    struct timeval stop, start;
+    gettimeofday(&start, NULL);
 
     cubeData returnval;
 
@@ -335,6 +358,8 @@ cubeData getBoundingCube(cv::Mat &img, std::vector<cv::Point> qr_pixels){
             returnval.tvec = cube_tvec;
         }                                               
     }
+    gettimeofday(&stop, NULL);
+    printf("took %lu us for getBoundingCube\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
     return returnval;
 };
 
